@@ -44,6 +44,12 @@ const (
 	MessageListenerCloseResponse
 	MessageAgentKillRequest
 	MessageListenerSocketConnectionReady
+	MessageShellRequest
+	MessageShellResponse
+	MessageScriptLoadRequest
+	MessageScriptLoadResponse
+	MessageAssemblyLoadRequest
+	MessageAssemblyLoadResponse
 )
 
 const (
@@ -132,6 +138,15 @@ type NetInterface struct {
 	Addresses    []string
 }
 
+type ShellRequestPacket struct {
+        CmdLine string
+}
+
+type ShellResponsePacket struct {
+        Output string
+        Err    bool   // true if command returned non‑zero or exec failed
+}
+
 func (ni NetInterface) MarshalJSON() ([]byte, error) {
 	type NetInterfaceInfo struct {
 		Index        int
@@ -182,6 +197,31 @@ type ConnectRequestPacket struct {
 	Transport uint8
 	Address   string
 	Port      uint16
+}
+
+// script exec
+type ScriptLoadRequest struct {
+    Lang   string // "ps1" | "sh"
+    Script []byte // raw code (optionally compressed)
+    Args   string // optional command-line args
+}
+
+type ScriptLoadResponse struct {
+    Output string
+    Err    bool
+}
+
+// .NET Loader
+type AssemblyLoadRequest struct {
+    DLL     []byte // raw PE bytes (optionally compressed)
+    Type    string // e.g. "MyName.Space.Program"
+    Method  string // static method
+    JSONArg string // optional JSON string arg
+}
+
+type AssemblyLoadResponse struct {
+    Return string
+    Err    bool
 }
 
 // ConnectResponsePacket is the response to the ConnectRequestPacket and indicate if the connection can be established, and if a RST packet need to be sent

@@ -66,6 +66,18 @@ func payloadTypeFromInterface(payload interface{}) (uint8, error) {
 		return MessageAgentKillRequest, nil
 	case ListenerSocketConnectionReady:
 		return MessageListenerSocketConnectionReady, nil
+	case *ShellRequestPacket:
+		return MessageShellRequest, nil
+	case *ShellResponsePacket:
+		return MessageShellResponse, nil
+	case *ScriptLoadRequest:
+		return MessageScriptLoadRequest, nil
+	case *ScriptLoadResponse:
+		return MessageScriptLoadResponse, nil
+	case *AssemblyLoadRequest:
+		return MessageAssemblyLoadRequest, nil
+	case *AssemblyLoadResponse:
+		return MessageAssemblyLoadResponse, nil
 	default:
 		return 0, fmt.Errorf("payloadTypeFromInterface called for unknown payload type: %v", payload)
 	}

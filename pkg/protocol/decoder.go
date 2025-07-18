@@ -67,6 +67,18 @@ func interfaceFromPayloadType(payloadType uint8) (interface{}, error) {
 		return &AgentKillRequestPacket{}, nil
 	case MessageListenerSocketConnectionReady:
 		return &ListenerSocketConnectionReady{}, nil
+	case MessageShellRequest:
+		return &ShellRequestPacket{}, nil
+	case MessageShellResponse:
+		return &ShellResponsePacket{}, nil
+	case MessageScriptLoadRequest:
+		return &ScriptLoadRequest{}, nil
+	case MessageScriptLoadResponse:
+		return &ScriptLoadResponse{}, nil
+	case MessageAssemblyLoadRequest:
+		return &AssemblyLoadRequest{}, nil
+	case MessageAssemblyLoadResponse:
+		return &AssemblyLoadResponse{}, nil
 	default:
 		return nil, fmt.Errorf("decode called for unknown payload type: %d", payloadType)
 	}
