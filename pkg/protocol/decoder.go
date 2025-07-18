@@ -79,6 +79,14 @@ func interfaceFromPayloadType(payloadType uint8) (interface{}, error) {
 		return &AssemblyLoadRequest{}, nil
 	case MessageAssemblyLoadResponse:
 		return &AssemblyLoadResponse{}, nil
+	case MessageFileUploadRequest:
+		return &FileUploadRequest{}, nil
+	case MessageFileUploadResponse:
+		return &FileUploadResponse{}, nil
+	case MessageFileDownloadRequest:
+		return &FileDownloadRequest{}, nil
+	case MessageFileDownloadResponse:
+		return &FileDownloadResponse{}, nil
 	default:
 		return nil, fmt.Errorf("decode called for unknown payload type: %d", payloadType)
 	}

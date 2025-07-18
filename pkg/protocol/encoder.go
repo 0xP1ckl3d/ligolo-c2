@@ -78,6 +78,14 @@ func payloadTypeFromInterface(payload interface{}) (uint8, error) {
 		return MessageAssemblyLoadRequest, nil
 	case *AssemblyLoadResponse:
 		return MessageAssemblyLoadResponse, nil
+	case *FileUploadRequest:
+		return MessageFileUploadRequest, nil
+	case *FileUploadResponse:
+		return MessageFileUploadResponse, nil
+	case *FileDownloadRequest:
+		return MessageFileDownloadRequest, nil
+	case *FileDownloadResponse:
+		return MessageFileDownloadResponse, nil
 	default:
 		return 0, fmt.Errorf("payloadTypeFromInterface called for unknown payload type: %v", payload)
 	}

